@@ -1,0 +1,172 @@
+﻿
+> werewolf-web@0.1.0 build
+> next build
+
+â–² Next.js 16.2.10 (Turbopack)
+- Environments: .env.local
+
+node.exe : â The 
+"middleware" file 
+convention is 
+deprecated. Please 
+use "proxy" instead. 
+Learn more: https://ne
+xtjs.org/docs/messages
+/middleware-to-proxy
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (â The "m    
+iddle...leware-to    
+-proxy:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+  Creating an optimized production build ...
+âœ“ Compiled successfully in 3.2s
+  Running TypeScript ...
+  Finished TypeScript in 2.7s ...
+  Collecting page data using 10 workers ...
+  Generating static pages using 10 workers (0/7) ...
+â Unsupported 
+metadata themeColor 
+is configured in 
+metadata export in 
+/_not-found. Please 
+move it to viewport 
+export instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata viewport is 
+configured in 
+metadata export in 
+/_not-found. Please 
+move it to viewport 
+export instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata themeColor 
+is configured in 
+metadata export in 
+/login. Please move 
+it to viewport export 
+instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata viewport is 
+configured in 
+metadata export in 
+/login. Please move 
+it to viewport export 
+instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata themeColor 
+is configured in 
+metadata export in 
+/register. Please 
+move it to viewport 
+export instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata viewport is 
+configured in 
+metadata export in 
+/register. Please 
+move it to viewport 
+export instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata themeColor 
+is configured in 
+metadata export in /. 
+Please move it to 
+viewport export 
+instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata viewport is 
+configured in 
+metadata export in /. 
+Please move it to 
+viewport export 
+instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata themeColor 
+is configured in 
+metadata export in 
+/profile. Please move 
+it to viewport export 
+instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+â Unsupported 
+metadata viewport is 
+configured in 
+metadata export in 
+/profile. Please move 
+it to viewport export 
+instead.
+Read more: https://nex
+tjs.org/docs/app/api-r
+eference/functions/gen
+erate-viewport
+  Generating static pages using 10 workers (1/7) 
+  Generating static pages using 10 workers (3/7) 
+  Generating static pages using 10 workers (5/7) 
+âœ“ Generating static pages using 10 workers (7/7) in 629ms
+  Finalizing page optimization ...
+
+Route (app)
+â”Œ â—‹ /
+â”œ â—‹ /_not-found
+â”œ â—‹ /login
+â”œ â—‹ /profile
+â”œ â—‹ /register
+â”œ Æ’ /room/[roomCode]/game
+â”” Æ’ /room/[roomCode]/lobby
+
+
+Æ’ Proxy (Middleware)
+
+â—‹  (Static)   prerendered as static content
+Æ’  (Dynamic)  server-rendered on demand
+

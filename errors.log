@@ -1,0 +1,18 @@
+﻿app/(main)/page.tsx(40,35): error TS2339: Property 'code' does not exist on type 'never'.
+app/(main)/page.tsx(41,33): error TS2339: Property 'code' does not exist on type 'never'.
+app/(main)/page.tsx(65,14): error TS2339: Property 'status' does not exist on type 'never'.
+app/(main)/page.tsx(69,14): error TS2339: Property 'status' does not exist on type 'never'.
+app/(main)/page.tsx(73,31): error TS2339: Property 'code' does not exist on type 'never'.
+app/room/[roomCode]/game/page.tsx(407,38): error TS2339: Property 'profiles' does not exist on type '{ id: string; session_id: string; profile_id: string; role: RoleKey; is_alive: boolean; died_at_phase: string | null; died_at_day: number | null; lover_id: string | null; }'.
+app/room/[roomCode]/lobby/page.tsx(66,15): error TS2345: Argument of type '{ is_ready: boolean; }' is not assignable to parameter of type 'never'.
+app/room/[roomCode]/lobby/page.tsx(74,77): error TS2345: Argument of type '{ p_room_id: string; }' is not assignable to parameter of type 'undefined'.
+app/room/[roomCode]/lobby/page.tsx(173,28): error TS2322: Type '{ children: Element; asChild: true; }' is not assignable to type 'IntrinsicAttributes & Props<unknown>'.
+  Property 'asChild' does not exist on type 'IntrinsicAttributes & Props<unknown>'.
+components/room/ChatBox.tsx(77,7): error TS2353: Object literal may only specify known properties, and 'session_id' does not exist in type 'never[]'.
+contexts/GameContext.tsx(131,21): error TS2339: Property 'id' does not exist on type 'never'.
+hooks/useRoomRealtime.ts(45,27): error TS2339: Property 'id' does not exist on type 'never'.
+hooks/useRoomRealtime.ts(66,29): error TS2339: Property 'id' does not exist on type 'never'.
+hooks/useRoomRealtime.ts(73,38): error TS2339: Property 'id' does not exist on type 'never'.
+hooks/useRoomRealtime.ts(86,33): error TS2339: Property 'id' does not exist on type 'never'.
+hooks/useRoomRealtime.ts(113,19): error TS2353: Object literal may only specify known properties, and 'room_id' does not exist in type 'never[]'.
+hooks/useRoomRealtime.ts(113,33): error TS2339: Property 'id' does not exist on type 'never'.

@@ -104,7 +104,7 @@ end;
 $$;
 
 -- =====================================================================
--- 3. ROOM_PLAYERS (người chơi trong phòng / sảnh chờ)
+-- 3. ROOM_PLAYERS
 -- =====================================================================
 create table public.room_players (
   id uuid primary key default gen_random_uuid(),
@@ -144,7 +144,7 @@ create policy "Tự rời phòng hoặc host kick"
   );
 
 -- =====================================================================
--- 4. GAME_SESSIONS (1 ván chơi cụ thể trong phòng)
+-- 4. GAME_SESSIONS
 -- =====================================================================
 create table public.game_sessions (
   id uuid primary key default gen_random_uuid(),
@@ -174,11 +174,8 @@ create policy "Xem được session của phòng mình tham gia"
     )
   );
 
--- INSERT/UPDATE session KHÔNG cho client trực tiếp — chỉ qua RPC (security definer)
--- nên không tạo policy insert/update cho client role ở đây.
-
 -- =====================================================================
--- 5. GAME_PLAYERS (vai trò + trạng thái sống/chết trong 1 ván)
+-- 5. GAME_PLAYERS
 -- =====================================================================
 create table public.game_players (
   id uuid primary key default gen_random_uuid(),
@@ -188,14 +185,12 @@ create table public.game_players (
   is_alive boolean not null default true,
   died_at_phase text,
   died_at_day int,
-  lover_id uuid references public.game_players(id), -- dùng cho Cupid
+  lover_id uuid references public.game_players(id),
   unique (session_id, profile_id)
 );
 
 alter table public.game_players enable row level security;
 
--- Người chơi CHỈ xem được role thật của CHÍNH MÌNH,
--- hoặc role của người khác NẾU: game đã kết thúc, hoặc chính họ đã chết (ghost).
 create policy "Xem role có điều kiện"
   on public.game_players for select
   using (
@@ -212,8 +207,6 @@ create policy "Xem role có điều kiện"
         and me.is_alive = false
     )
   );
-
--- Không cho client insert/update trực tiếp — xử lý qua RPC assign_roles / resolve_night / resolve_vote
 
 -- =====================================================================
 -- 6. NIGHT_ACTIONS
@@ -277,7 +270,7 @@ create policy "Ai trong ván cũng xem được phiếu bầu (công khai)"
     )
   );
 
-create policy "Chỉ người còn sống được bỏ phiếu, đúng lượt của mình"
+create policy "Chỉ người còn sống được bỏ phiếu"
   on public.votes for insert
   with check (
     exists (
@@ -288,7 +281,7 @@ create policy "Chỉ người còn sống được bỏ phiếu, đúng lượt 
     )
   );
 
-create policy "Được sửa phiếu của mình trước khi hết giờ vote"
+create policy "Được sửa phiếu của mình"
   on public.votes for update
   using (
     exists (
@@ -312,9 +305,6 @@ create table public.chat_messages (
 
 alter table public.chat_messages enable row level security;
 
--- Kênh public: ai trong ván cũng đọc được
--- Kênh wolves: chỉ phe sói (còn sống hoặc đã chết trong phe sói) đọc được
--- Kênh ghost: chỉ người đã chết đọc được
 create policy "Đọc chat theo đúng kênh được phép"
   on public.chat_messages for select
   using (
@@ -340,7 +330,7 @@ create policy "Đọc chat theo đúng kênh được phép"
     end
   );
 
-create policy "Chỉ gửi chat đúng kênh mình có quyền, đúng danh tính"
+create policy "Chỉ gửi chat đúng kênh mình có quyền"
   on public.chat_messages for insert
   with check (
     sender_id = auth.uid()
@@ -363,10 +353,10 @@ create policy "Chỉ gửi chat đúng kênh mình có quyền, đúng danh tín
   );
 
 -- =====================================================================
--- 9. RPC FUNCTIONS (chạy security definer để tránh gian lận từ client)
+-- 9. RPC FUNCTIONS
 -- =====================================================================
 
--- 9.1 Tạo phòng mới + set code random, retry nếu trùng
+-- 9.1 Tạo phòng mới
 create function public.create_room()
 returns public.rooms
 language plpgsql
@@ -396,9 +386,9 @@ begin
 end;
 $$;
 
--- 9.2 Random gán vai trò cho toàn bộ người chơi khi bắt đầu ván
+-- 9.2 Random gán vai trò
 create function public.assign_roles(p_room_id uuid)
-returns uuid -- trả về session_id mới tạo
+returns uuid
 language plpgsql
 security definer
 set search_path = public
@@ -409,10 +399,8 @@ declare
   v_role_pool text[] := '{}';
   v_role text;
   v_count int;
-  v_player record;
   v_players_count int;
 begin
-  -- chỉ host mới được start game
   if not exists (
     select 1 from public.rooms where id = p_room_id and host_id = auth.uid()
   ) then
@@ -420,10 +408,8 @@ begin
   end if;
 
   select settings into v_settings from public.rooms where id = p_room_id;
-
   select count(*) into v_players_count from public.room_players where room_id = p_room_id;
 
-  -- build role pool từ settings.roles, ví dụ {"wolf": 1, "seer": 1, ...}
   for v_role, v_count in
     select key, value::int from jsonb_each_text(v_settings->'roles')
   loop
@@ -432,40 +418,17 @@ begin
     end loop;
   end loop;
 
-  -- lấp đầy phần còn lại bằng dân làng thường
   while array_length(v_role_pool, 1) < v_players_count loop
     v_role_pool := array_append(v_role_pool, 'villager');
   end loop;
 
-  if array_length(v_role_pool, 1) <> v_players_count then
-    raise exception 'Số lượng vai trò (%!) không khớp số người chơi (%)',
-      array_length(v_role_pool, 1), v_players_count;
-  end if;
-
-  -- xáo trộn role pool (Fisher-Yates đơn giản qua ORDER BY random())
   create temporary table tmp_shuffled_roles as
     select unnest(v_role_pool) as role order by random();
 
-  -- tạo session mới
   insert into public.game_sessions (room_id, phase, day_number)
   values (p_room_id, 'night_intro', 1)
   returning id into v_session_id;
 
-  -- gán role cho từng player theo thứ tự đã xáo trộn
-  for v_player in
-    select rp.profile_id, tsr.role,
-           row_number() over () as rn
-    from public.room_players rp
-    join (select role, row_number() over () as rn from tmp_shuffled_roles) tsr
-      on true
-    where rp.room_id = p_room_id
-  loop
-    -- (đơn giản hoá: dùng cách join theo row_number ở trên;
-    --  trong triển khai thực tế nên zip 2 mảng bằng generate_series)
-    null;
-  end loop;
-
-  -- Cách an toàn hơn: zip bằng generate_series
   insert into public.game_players (session_id, profile_id, role)
   select v_session_id, rp.profile_id, roles.role
   from (
@@ -486,10 +449,7 @@ begin
 end;
 $$;
 
--- 9.3 Ghi nhận hành động ban đêm (wrapper có validate thêm nếu cần)
--- (Có thể để client insert trực tiếp vào night_actions vì đã có RLS chặt,
---  RPC này hữu ích khi cần thêm validate nghiệp vụ, VD: guard không được
---  bảo vệ trùng người 2 đêm liên tiếp)
+-- 9.3 Submit hành động ban đêm
 create function public.submit_night_action(
   p_session_id uuid,
   p_action_type text,
@@ -526,7 +486,7 @@ begin
 end;
 $$;
 
--- 9.4 Xử lý kết quả đêm: tổng hợp night_actions -> ai chết, cập nhật is_alive
+-- 9.4 Xử lý kết quả đêm
 create function public.resolve_night(p_session_id uuid)
 returns void
 language plpgsql
@@ -541,7 +501,6 @@ declare
 begin
   select day_number into v_day from public.game_sessions where id = p_session_id;
 
-  -- Sói giết ai (lấy target được vote nhiều nhất nếu nhiều sói)
   select target_id into v_kill_target
   from public.night_actions
   where session_id = p_session_id and day_number = v_day and action_type = 'kill'
@@ -549,13 +508,11 @@ begin
   order by count(*) desc
   limit 1;
 
-  -- Bảo vệ có chặn được không
   select target_id into v_protected_target
   from public.night_actions
   where session_id = p_session_id and day_number = v_day and action_type = 'protect'
   limit 1;
 
-  -- Phù thủy cứu có chặn được không
   select exists (
     select 1 from public.night_actions
     where session_id = p_session_id and day_number = v_day
@@ -569,7 +526,6 @@ begin
     set is_alive = false, died_at_phase = 'night', died_at_day = v_day
     where id = v_kill_target;
 
-    -- Xử lý cặp đôi Cupid: nếu 1 người trong cặp chết, người kia chết theo
     update public.game_players lover
     set is_alive = false, died_at_phase = 'night_lover', died_at_day = v_day
     from public.game_players victim
@@ -577,9 +533,6 @@ begin
       and lover.id = victim.lover_id
       and lover.is_alive = true;
   end if;
-
-  -- TODO: xử lý phù thủy độc (action_type mở rộng 'poison')
-  -- TODO: xử lý thợ săn bắn theo khi chết ('hunter_shot')
 
   update public.game_sessions
   set phase = 'day_result', phase_ends_at = null
@@ -589,7 +542,7 @@ begin
 end;
 $$;
 
--- 9.5 Xử lý kết quả bỏ phiếu ban ngày
+-- 9.5 Xử lý kết quả bỏ phiếu
 create function public.resolve_vote(p_session_id uuid)
 returns void
 language plpgsql
@@ -622,7 +575,6 @@ begin
     offset 1 limit 1
   ) t;
 
-  -- Hòa phiếu -> không ai chết (tuỳ luật, có thể đổi thành vote lại)
   if v_top_count is not null and v_top_count = coalesce(v_second_count, -1) then
     v_hanged := null;
   end if;
@@ -648,7 +600,7 @@ begin
 end;
 $$;
 
--- 9.6 Kiểm tra điều kiện thắng, kết thúc game nếu có phe thắng
+-- 9.6 Kiểm tra điều kiện thắng
 create function public.check_win_condition(p_session_id uuid)
 returns void
 language plpgsql
@@ -660,7 +612,7 @@ declare
   v_villagers_alive int;
   v_winner text;
 begin
-  select count(*) filter (where role = 'wolf' and is_alive), 
+  select count(*) filter (where role = 'wolf' and is_alive),
          count(*) filter (where role <> 'wolf' and is_alive)
   into v_wolves_alive, v_villagers_alive
   from public.game_players
@@ -681,7 +633,6 @@ begin
     set status = 'finished'
     where id = (select room_id from public.game_sessions where id = p_session_id);
 
-    -- cập nhật thống kê thắng/thua
     update public.profiles p
     set wins = wins + 1
     from public.game_players gp
@@ -705,7 +656,7 @@ begin
 end;
 $$;
 
--- 9.7 Chuyển pha tổng quát (gọi khi hết giờ đếm ngược, do client hoặc cron gọi)
+-- 9.7 Chuyển pha
 create function public.advance_phase(p_session_id uuid)
 returns void
 language plpgsql
@@ -751,6 +702,57 @@ begin
 end;
 $$;
 
+-- 9.8 Kiểm tra vai trò (dành riêng cho Tiên Tri soi bài)
+create function public.check_player_role(
+  p_session_id uuid,
+  p_target_profile_id uuid
+)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_caller public.game_players;
+  v_target public.game_players;
+  v_has_checked boolean;
+  v_day int;
+begin
+  select * into v_caller
+  from public.game_players
+  where session_id = p_session_id and profile_id = auth.uid();
+
+  if v_caller.id is null or v_caller.role <> 'seer' or v_caller.is_alive = false then
+    raise exception 'Chỉ Tiên tri còn sống mới được thực hiện hành động này';
+  end if;
+
+  select day_number into v_day from public.game_sessions where id = p_session_id;
+
+  select exists (
+    select 1 from public.night_actions
+    where session_id = p_session_id
+      and day_number = v_day
+      and actor_id = v_caller.id
+      and action_type = 'check'
+      and target_id = (select id from public.game_players where session_id = p_session_id and profile_id = p_target_profile_id)
+  ) into v_has_checked;
+
+  if not v_has_checked then
+    raise exception 'Bạn chưa thực hiện soi người chơi này đêm nay';
+  end if;
+
+  select * into v_target
+  from public.game_players
+  where session_id = p_session_id and profile_id = p_target_profile_id;
+
+  if v_target.role = 'wolf' then
+    return 'wolf';
+  else
+    return 'villager';
+  end if;
+end;
+$$;
+
 -- =====================================================================
 -- 10. REALTIME PUBLICATION
 -- =====================================================================
@@ -762,7 +764,7 @@ alter publication supabase_realtime add table
   public.chat_messages;
 
 -- =====================================================================
--- 11. INDEXES cho query thường dùng
+-- 11. INDEXES
 -- =====================================================================
 create index idx_room_players_room on public.room_players(room_id);
 create index idx_game_players_session on public.game_players(session_id);
@@ -770,16 +772,3 @@ create index idx_night_actions_session_day on public.night_actions(session_id, d
 create index idx_votes_session_day on public.votes(session_id, day_number);
 create index idx_chat_session_channel on public.chat_messages(session_id, channel, created_at);
 create index idx_rooms_code on public.rooms(code);
-
--- =====================================================================
--- HẾT FILE — Ghi chú:
--- - assign_roles(): thuật toán zip role/player theo random() có thể tối ưu
---   thêm nếu số người chơi lớn; với quy mô bạn bè (6-20 người) là đủ nhanh.
--- - resolve_night()/resolve_vote() mới cover Sói + Bảo vệ + Phù thủy(save) +
---   Cupid. Cần bổ sung riêng: Phù thủy (poison), Thợ săn (hunter_shot),
---   Tiên tri chỉ cần SELECT night_actions loại 'check' ở phía client
---   (không cần resolve vì không thay đổi is_alive).
--- - Nên viết thêm 1 Vercel Cron (hoặc Supabase Edge Function + pg_cron)
---   gọi advance_phase() cho các session có phase_ends_at < now()
---   để đảm bảo game tự chạy tiếp dù không ai bấm gì.
--- =====================================================================

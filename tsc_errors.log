@@ -1,0 +1,1 @@
+﻿app/profile/page.tsx(115,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
