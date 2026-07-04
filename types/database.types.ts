@@ -88,7 +88,7 @@ export interface Database {
           phase: GamePhase
           day_number: number
           phase_ends_at: string | null
-          winner: 'wolves' | 'villagers' | null
+          winner: 'wolves' | 'villagers' | 'jester' | null
           started_at: string
           ended_at: string | null
           paused_phase: string | null
@@ -99,7 +99,7 @@ export interface Database {
           phase?: GamePhase
           day_number?: number
           phase_ends_at?: string | null
-          winner?: 'wolves' | 'villagers' | null
+          winner?: 'wolves' | 'villagers' | 'jester' | null
           started_at?: string
           ended_at?: string | null
           paused_phase?: string | null
@@ -108,7 +108,7 @@ export interface Database {
           phase?: GamePhase
           day_number?: number
           phase_ends_at?: string | null
-          winner?: 'wolves' | 'villagers' | null
+          winner?: 'wolves' | 'villagers' | 'jester' | null
           ended_at?: string | null
           paused_phase?: string | null
         }

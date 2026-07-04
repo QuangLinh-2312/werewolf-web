@@ -20,7 +20,7 @@ export interface RoleDefinition {
   accent: string
 }
 
-export const ROLE_DEFINITIONS: Record<RoleKey, RoleDefinition> = {
+export const ROLE_DEFINITIONS: Partial<Record<RoleKey, RoleDefinition>> = {
   wolf: {
     key: 'wolf',
     name: 'Ma Sói',
@@ -191,9 +191,9 @@ export const ROLE_DEFINITIONS: Record<RoleKey, RoleDefinition> = {
 
 export function getRoleDefinition(roleKey: string): RoleDefinition {
   if (roleKey in ROLE_DEFINITIONS) {
-    return ROLE_DEFINITIONS[roleKey as RoleKey]
+    return ROLE_DEFINITIONS[roleKey as RoleKey]!
   }
-  return ROLE_DEFINITIONS.villager
+  return ROLE_DEFINITIONS.villager!
 }
 
 // ─── Extended mode roles ──────────────────────────────────────────────────────
