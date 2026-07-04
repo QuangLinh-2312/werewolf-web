@@ -27,8 +27,8 @@ export default function RegisterPage() {
     if (error) {
       toast.error('Đăng ký thất bại', { description: error })
     } else {
-      toast.success('Đăng ký thành công! Kiểm tra email để xác nhận.')
-      router.push('/')
+      toast.success('Đăng ký thành công! Hãy đăng nhập để tiếp tục.')
+      router.push('/login')
     }
   }
 
