@@ -642,6 +642,7 @@ function GameInner() {
                   senderId={user?.id ?? ''}
                   senderNickname={(mePlayer as any).profiles?.nickname ?? 'Spectator'}
                   channel={chatChannel}
+                  isSilenced={(mePlayer as any)?.is_silenced === true}
                 />
               </div>
             </div>

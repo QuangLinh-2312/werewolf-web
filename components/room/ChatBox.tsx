@@ -14,13 +14,14 @@ interface ChatBoxProps {
   senderId: string
   senderNickname: string
   channel: ChatChannel
+  isSilenced?: boolean
 }
 
 interface MessageWithProfile extends ChatMessage {
   profiles: { nickname: string }
 }
 
-export function ChatBox({ sessionId, senderId, senderNickname, channel }: ChatBoxProps) {
+export function ChatBox({ sessionId, senderId, senderNickname, channel, isSilenced = false }: ChatBoxProps) {
   const [messages, setMessages] = useState<MessageWithProfile[]>([])
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -120,30 +121,36 @@ export function ChatBox({ sessionId, senderId, senderNickname, channel }: ChatBo
       </div>
 
       {/* Input */}
-      <form
-        onSubmit={handleSubmit(onSend)}
-        className="flex gap-2 p-3 border-t border-white/5"
-      >
-        <Input
-          placeholder="Nhắn tin..."
-          maxLength={500}
-          className="bg-white/5 border-white/10 text-white placeholder:text-white/20 flex-1"
-          {...register('content', { required: true })}
-          autoComplete="off"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={sending}
-          className="bg-purple-600 hover:bg-purple-500 h-10 w-10 shrink-0"
+      {isSilenced && channel === 'public' ? (
+        <div className="flex items-center gap-2 px-3 py-3 border-t border-white/5 bg-red-950/20">
+          <span className="text-xs text-red-400/80 text-center w-full">🔇 Bạn đang bị câm lặng — không thể chat ban ngày hôm nay</span>
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSubmit(onSend)}
+          className="flex gap-2 p-3 border-t border-white/5"
         >
-          {sending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-        </Button>
-      </form>
+          <Input
+            placeholder="Nhắn tin..."
+            maxLength={500}
+            className="bg-white/5 border-white/10 text-white placeholder:text-white/20 flex-1"
+            {...register('content', { required: true })}
+            autoComplete="off"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={sending}
+            className="bg-purple-600 hover:bg-purple-500 h-10 w-10 shrink-0"
+          >
+            {sending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
+        </form>
+      )}
     </div>
   )
 }
