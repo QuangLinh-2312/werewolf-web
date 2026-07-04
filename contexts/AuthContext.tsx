@@ -88,10 +88,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInAsGuest = async (
     nickname: string
   ): Promise<{ error: string | null }> => {
+    // Kiểm tra xem đã có session anonymous còn hạn chưa — tránh tạo user rác
+    const { data: { session: existingSession } } = await supabase.auth.getSession()
+    if (existingSession?.user?.is_anonymous) {
+      // Session guest còn valid → chỉ cập nhật nickname nếu khác, không tạo mới
+      const currentNickname = existingSession.user.user_metadata?.nickname
+      if (currentNickname !== nickname) {
+        await supabase.auth.updateUser({ data: { nickname } })
+      }
+      return { error: null }
+    }
+
+    // Chưa có session → tạo anonymous user mới
     const { error } = await supabase.auth.signInAnonymously({
-      options: {
-        data: { nickname },
-      },
+      options: { data: { nickname } },
     })
     if (error) return { error: error.message }
     return { error: null }
